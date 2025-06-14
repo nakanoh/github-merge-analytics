@@ -1,5 +1,4 @@
 name: Claude Code Automation
-
 on:
   issue_comment:
     types: [created]
@@ -7,7 +6,6 @@ on:
     types: [created]
   issues:
     types: [opened, assigned]
-
 jobs:
   claude:
     if: |
@@ -18,7 +16,6 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-
       - name: Run Claude Code Action
         uses: anthropics/claude-code-action@v0.0.18
         with:
