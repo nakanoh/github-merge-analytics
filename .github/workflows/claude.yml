@@ -6,6 +6,12 @@ on:
     types: [created]
   issues:
     types: [opened, assigned]
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
 jobs:
   claude:
     if: |
@@ -20,4 +26,3 @@ jobs:
         uses: anthropics/claude-code-action@v0.0.18
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
