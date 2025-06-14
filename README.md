@@ -29,6 +29,28 @@ cd github-merge-analytics
 pip install -r requirements.txt
 ```
 
+## GitHub Authentication (Optional)
+
+To increase API rate limits from 60 to 5000 requests/hour, set up a GitHub Personal Access Token:
+
+1. Create a Personal Access Token:
+   - Go to GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)
+   - Click "Generate new token (classic)"
+   - Select scopes: Only `public_repo` is needed for public repositories
+   - Copy the generated token
+
+2. Set the environment variable:
+```bash
+export GITHUB_TOKEN=ghp_your_token_here
+```
+
+3. Run the application as normal:
+```bash
+python main.py --repo https://github.com/owner/repo
+```
+
+The application will automatically detect and use the token for authentication.
+
 ## Usage
 
 ### Basic Usage
@@ -101,7 +123,9 @@ The generated graph includes:
 The application handles GitHub API rate limiting:
 - Uses appropriate User-Agent headers
 - Provides clear error messages if rate limits are exceeded
-- For higher rate limits, consider using GitHub authentication (not implemented in basic version)
+- **Supports GitHub Personal Access Token authentication for 5000 requests/hour** (vs 60 for unauthenticated)
+- Automatically detects and uses `GITHUB_TOKEN` environment variable
+- Falls back gracefully to unauthenticated requests if no token is provided
 
 ## Error Handling
 
@@ -129,8 +153,8 @@ The application includes comprehensive error handling for:
 
 ## Limitations
 
-- Only works with public repositories (authentication not implemented)
-- Subject to GitHub API rate limits (60 requests/hour for unauthenticated users)
+- Only works with public repositories
+- Subject to GitHub API rate limits (60 requests/hour without token, 5000 with token)
 - Requires graphical display for matplotlib output
 
 ## Contributing
@@ -150,8 +174,8 @@ This project is open source. Please check the repository for license details.
 ### Common Issues
 
 **"Rate limit exceeded"**:
-- Wait for the rate limit to reset (typically 60 minutes)
-- Consider implementing GitHub authentication for higher limits
+- Set up a GitHub Personal Access Token (see GitHub Authentication section above)
+- Or wait for the rate limit to reset (typically 60 minutes for unauthenticated requests)
 
 **"Invalid GitHub repository URL"**:
 - Ensure the URL is correctly formatted

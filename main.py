@@ -5,6 +5,7 @@ A tool to analyze and visualize daily merge counts for GitHub repositories.
 """
 
 import argparse
+import os
 import re
 import sys
 from datetime import datetime, timedelta
@@ -25,6 +26,16 @@ class GitHubAnalytics:
         self.session.headers.update({
             'User-Agent': 'github-merge-analytics/1.0'
         })
+        
+        # Add GitHub token authentication if available
+        github_token = os.getenv('GITHUB_TOKEN')
+        if github_token:
+            self.session.headers.update({
+                'Authorization': f'Bearer {github_token}'
+            })
+            print("Using GitHub token authentication (5000 requests/hour limit)")
+        else:
+            print("No GitHub token found - using unauthenticated requests (60 requests/hour limit)")
     
     def parse_repo_url(self, url: str) -> Tuple[str, str]:
         """Parse GitHub repository URL to extract owner and repo name."""
