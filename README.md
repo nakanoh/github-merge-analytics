@@ -1,1 +1,173 @@
-# github-merge-analytics
+# GitHub Merge Analytics
+
+A Python application that analyzes and visualizes daily merge counts for GitHub repositories over the past month.
+
+## Features
+
+- Fetch daily merge counts from any public GitHub repository
+- Generate interactive graphs using matplotlib
+- Command-line interface for easy integration
+- Support for various GitHub URL formats
+- Customizable time periods for analysis
+- Rate limiting and error handling
+
+## Requirements
+
+- Python 3.8+
+- Internet connection for GitHub API access
+
+## Installation
+
+1. Clone this repository:
+```bash
+git clone https://github.com/nakanoh/github-merge-analytics.git
+cd github-merge-analytics
+```
+
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+## Usage
+
+### Basic Usage
+
+Analyze a repository for the past 30 days:
+```bash
+python main.py --repo https://github.com/owner/repo
+```
+
+### Alternative URL Formats
+
+The tool supports various GitHub URL formats:
+```bash
+# HTTPS URL
+python main.py --repo https://github.com/microsoft/vscode
+
+# SSH URL format
+python main.py --repo git@github.com:microsoft/vscode.git
+
+# Short format
+python main.py --repo microsoft/vscode
+```
+
+### Custom Time Period
+
+Analyze for a different number of days:
+```bash
+python main.py --repo https://github.com/owner/repo --days 60
+```
+
+### Command Line Options
+
+- `--repo` (required): GitHub repository URL or owner/repo format
+- `--days` (optional): Number of days to analyze (default: 30)
+
+## Output
+
+The application will:
+
+1. Display analysis progress in the terminal
+2. Show statistics about the repository's merge activity
+3. Generate and display a graph with:
+   - Daily merge counts over the specified period
+   - Total merges, average per day, and peak activity
+   - Date formatting for easy reading
+
+## Examples
+
+### Example 1: Analyze React Repository
+```bash
+python main.py --repo https://github.com/facebook/react
+```
+
+### Example 2: Analyze with Custom Period
+```bash
+python main.py --repo microsoft/typescript --days 14
+```
+
+## Graph Features
+
+The generated graph includes:
+- Line plot with markers showing daily merge activity
+- Grid lines for better readability
+- Rotated date labels to prevent overlap
+- Summary statistics at the bottom
+- Professional styling with proper titles and labels
+
+## API Rate Limiting
+
+The application handles GitHub API rate limiting:
+- Uses appropriate User-Agent headers
+- Provides clear error messages if rate limits are exceeded
+- For higher rate limits, consider using GitHub authentication (not implemented in basic version)
+
+## Error Handling
+
+The application includes comprehensive error handling for:
+- Invalid repository URLs
+- Network connectivity issues
+- GitHub API errors
+- Invalid command line arguments
+
+## Technical Details
+
+### Dependencies
+- `requests`: HTTP library for GitHub API calls
+- `matplotlib`: Plotting library for graph generation
+
+### GitHub API
+- Uses GitHub REST API v3
+- Fetches closed pull requests with merge information
+- Processes merge timestamps for daily aggregation
+
+### Data Processing
+- Filters pull requests by merge date
+- Aggregates data into daily counts
+- Handles timezone conversions appropriately
+
+## Limitations
+
+- Only works with public repositories (authentication not implemented)
+- Subject to GitHub API rate limits (60 requests/hour for unauthenticated users)
+- Requires graphical display for matplotlib output
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+This project is open source. Please check the repository for license details.
+
+## Troubleshooting
+
+### Common Issues
+
+**"Rate limit exceeded"**:
+- Wait for the rate limit to reset (typically 60 minutes)
+- Consider implementing GitHub authentication for higher limits
+
+**"Invalid GitHub repository URL"**:
+- Ensure the URL is correctly formatted
+- Try the short format: `owner/repo`
+
+**Graph not displaying**:
+- Ensure you have a graphical environment
+- Check that matplotlib is properly installed
+
+**No data found**:
+- Verify the repository has merged pull requests in the specified time period
+- Check that the repository exists and is public
+
+## Support
+
+If you encounter issues:
+1. Check the troubleshooting section above
+2. Verify your Python and dependency versions
+3. Open an issue in the GitHub repository with detailed error information
