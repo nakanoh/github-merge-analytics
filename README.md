@@ -157,6 +157,44 @@ The application includes comprehensive error handling for:
 - Subject to GitHub API rate limits (60 requests/hour without token, 5000 with token)
 - Requires graphical display for matplotlib output
 
+## GitHub Actions CI/CD
+
+This project includes GitHub Actions workflows for automated testing and deployment to private repositories.
+
+### CI/CD Features
+
+- Automated testing on push and pull requests
+- Python syntax validation
+- Code linting with flake8
+- Automatic deployment to private repository (on main/master branch)
+
+### Setting Up Private Repository Deployment
+
+To enable automatic deployment to a private repository:
+
+1. **Create a Personal Access Token** with `repo` scope:
+   - Go to GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)
+   - Click "Generate new token (classic)"
+   - Select the `repo` scope (full control of private repositories)
+   - Copy the generated token
+
+2. **Add Secrets to Your Repository**:
+   - Go to your repository → Settings → Secrets and variables → Actions
+   - Click "New repository secret"
+   - Add the following secrets:
+     - `PRIVATE_REPO_TOKEN`: Your Personal Access Token
+     - `PRIVATE_REPO_URL`: The HTTPS URL of your private repository (e.g., `https://github.com/username/private-repo.git`)
+
+3. **Workflow Behavior**:
+   - The CI workflow runs on every push and pull request
+   - Tests and linting are executed automatically
+   - Deployment to private repository only occurs when pushing to `main` or `master` branch
+   - The workflow will skip deployment if secrets are not configured
+
+### Workflow Files
+
+The CI/CD configuration is located in `.github/workflows/ci.yml`.
+
 ## Contributing
 
 1. Fork the repository

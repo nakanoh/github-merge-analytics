@@ -1,0 +1,103 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.8'
+        cache: 'pip'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Lint with flake8
+      continue-on-error: true
+      run: |
+        pip install flake8
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        
+    - name: Test Python syntax
+      run: |
+        python -m py_compile main.py
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.8'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Configure Git
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        
+    - name: Deploy to private repository
+      env:
+        PRIVATE_REPO_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
+        PRIVATE_REPO_URL: ${{ secrets.PRIVATE_REPO_URL }}
+      run: |
+        if [ -z "$PRIVATE_REPO_TOKEN" ] || [ -z "$PRIVATE_REPO_URL" ]; then
+          echo "Private repository credentials not configured. Skipping deployment."
+          exit 0
+        fi
+        
+        # Normalize repository URL
+        REPO_URL="$PRIVATE_REPO_URL"
+        if [[ "$REPO_URL" == https://* ]]; then
+          REPO_URL="${REPO_URL#https://}"
+        elif [[ "$REPO_URL" == git@* ]]; then
+          REPO_URL="${REPO_URL#git@}"
+          REPO_URL="${REPO_URL/://}"
+        fi
+        
+        # Clone private repository
+        git clone https://${PRIVATE_REPO_TOKEN}@${REPO_URL} private-repo || {
+          echo "Failed to clone private repository"
+          exit 0
+        }
+        
+        # Copy files to private repository
+        cp -r main.py requirements.txt README.md .github private-repo/ 2>/dev/null || true
+        
+        # Commit and push to private repository
+        cd private-repo
+        git add .
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+          exit 0
+        fi
+        git commit -m "Auto-deploy from CI: $(date +'%Y-%m-%d %H:%M:%S')" || exit 0
+        git push origin main || git push origin master || exit 0
+
