@@ -68,10 +68,17 @@ jobs:
         PRIVATE_REPO_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
         PRIVATE_REPO_URL: ${{ secrets.PRIVATE_REPO_URL }}
       run: |
+        set -e
+        
         if [ -z "$PRIVATE_REPO_TOKEN" ] || [ -z "$PRIVATE_REPO_URL" ]; then
-          echo "Private repository credentials not configured. Skipping deployment."
+          echo "⚠️ Private repository credentials not configured."
+          echo "To enable deployment, add the following secrets:"
+          echo "  - PRIVATE_REPO_TOKEN: GitHub Personal Access Token with 'repo' scope"
+          echo "  - PRIVATE_REPO_URL: Private repository URL (e.g., https://github.com/username/repo.git)"
           exit 0
         fi
+        
+        echo "🚀 Starting deployment to private repository..."
         
         # Normalize repository URL
         REPO_URL="$PRIVATE_REPO_URL"
@@ -82,22 +89,69 @@ jobs:
           REPO_URL="${REPO_URL/://}"
         fi
         
+        # Remove .git suffix if present
+        REPO_URL="${REPO_URL%.git}"
+        
+        echo "📦 Cloning private repository: ${REPO_URL}"
+        
         # Clone private repository
-        git clone https://${PRIVATE_REPO_TOKEN}@${REPO_URL} private-repo || {
-          echo "Failed to clone private repository"
+        if ! git clone https://${PRIVATE_REPO_TOKEN}@${REPO_URL}.git private-repo; then
+          echo "❌ Failed to clone private repository. Check your token and URL."
           exit 0
-        }
+        fi
+        
+        echo "✅ Repository cloned successfully"
         
         # Copy files to private repository
-        cp -r main.py requirements.txt README.md .github private-repo/ 2>/dev/null || true
+        echo "📋 Copying files..."
+        cp -v main.py private-repo/ || echo "⚠️ main.py not found"
+        cp -v requirements.txt private-repo/ || echo "⚠️ requirements.txt not found"
+        cp -v README.md private-repo/ || echo "⚠️ README.md not found"
+        
+        # Copy .github directory if it exists
+        if [ -d ".github" ]; then
+          echo "📁 Copying .github directory..."
+          cp -r .github private-repo/ || echo "⚠️ Failed to copy .github"
+        fi
+        
+        # Copy .gitignore if it exists
+        if [ -f ".gitignore" ]; then
+          cp -v .gitignore private-repo/ || echo "⚠️ .gitignore not found"
+        fi
         
         # Commit and push to private repository
         cd private-repo
+        
+        # Detect default branch
+        DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@' || echo "main")
+        if ! git show-ref --verify --quiet refs/heads/$DEFAULT_BRANCH && git show-ref --verify --quiet refs/heads/master; then
+          DEFAULT_BRANCH="master"
+        fi
+        
+        echo "🌿 Using branch: $DEFAULT_BRANCH"
+        
+        # Checkout the default branch
+        git checkout -b $DEFAULT_BRANCH 2>/dev/null || git checkout $DEFAULT_BRANCH
+        
         git add .
+        
         if git diff --staged --quiet; then
-          echo "No changes to commit"
+          echo "ℹ️ No changes to commit. Repository is up to date."
           exit 0
         fi
-        git commit -m "Auto-deploy from CI: $(date +'%Y-%m-%d %H:%M:%S')" || exit 0
-        git push origin main || git push origin master || exit 0
+        
+        echo "💾 Committing changes..."
+        COMMIT_MSG="Auto-deploy from CI: $(date +'%Y-%m-%d %H:%M:%S') - Commit ${{ github.sha }}"
+        git commit -m "$COMMIT_MSG" || {
+          echo "⚠️ Failed to commit changes"
+          exit 0
+        }
+        
+        echo "📤 Pushing to private repository..."
+        if git push origin $DEFAULT_BRANCH; then
+          echo "✅ Successfully deployed to private repository!"
+        else
+          echo "❌ Failed to push to private repository"
+          exit 0
+        fi
 
